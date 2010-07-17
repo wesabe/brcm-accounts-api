@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+require "optparse"
+
+options = {}
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: perf-stats [options] LOGFILE"
+  
+  opts.on_tail("-h", "--help", "Show this message") do
+    puts opts
+    exit(-1)
+  end
+end
+
+parser.parse!
+filename = ARGV.first
+
+PERFSTAT = /PERFSTAT/
+
+if File.exist?(filename)
+  File.open(filename, "r") do |f|
+    for line in f
+      if line =~ PERFSTAT
+        parts = line.strip.split("\t")
+        parts[2] = parts[2].to_i
+        parts[3] = parts[3].to_f
+        parts[4], parts[5] = parts[4].split(" ", 2)
+        parts.delete_at(0)
+        puts parts.join("\t")
+      end
+    end
+  end
+else
+  $stderr.puts "#{$0}: must be given filename of log file"
+  $stderr.puts
+  puts parser.help
+  exit(-1)
+end

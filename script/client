@@ -1,0 +1,134 @@
+#!/usr/bin/env ruby
+require "optparse"
+require "digest/sha2"
+require "yaml"
+
+OPTIONS_FILE = File.expand_path("~/.brcm-client")
+
+options = {}
+
+if File.exist?(OPTIONS_FILE)
+  options.merge!(YAML.load_file(OPTIONS_FILE) || {})
+end
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: client [options] PATH"
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+  
+  opts.on("-q", "--quiet", "Run quietly") do |q|
+    options[:quiet] = q
+  end
+
+  opts.on("-i", "--id=ID", Integer, "The principal's user id") do |user_id|
+    options[:id] = user_id
+  end
+
+  opts.on("-u", "--username=USERNAME", "The principal's username") do |username|
+    options[:username] = username
+  end
+
+  opts.on("-k", "--key=ACCOUNT-KEY") do |account_key|
+    options[:account_key] = account_key
+  end
+
+  opts.on("-L", "--language=LANGUAGE") do |language|
+    options[:language] = language
+  end
+
+  opts.on("-t", "--type=CONTENT-TYPE") do |content_type|
+    options[:content_type] = content_type
+  end
+
+  opts.on("-b", "--base=BASE") do |base|
+    options[:base] = base
+  end
+
+  opts.on("-B", "--benchmark") do |benchmark|
+    options[:benchmark] = benchmark
+  end
+  
+  opts.on("-p", "--pretty") do |pretty|
+    options[:pretty] = pretty
+  end
+
+  opts.on("-c", "--concurrency=CONCURRENCY") do |concurrency|
+    options[:concurrency] = concurrency
+  end
+
+  opts.on("-n=REQUESTS") do |requests|
+    options[:requests] = requests
+  end
+
+  opts.on_tail("-h", "--help", "Show this message") do
+    puts opts
+    exit(-1)
+  end
+end
+parser.parse!
+
+if options[:id] && (options[:username] || options[:account_key]) && ARGV.first
+  unless options[:account_key]
+    STDERR.print "Password: "
+    begin
+      system "stty -echo"
+      password = STDIN.gets.chomp
+    ensure
+      system "stty echo"
+    end
+    puts
+    options[:account_key] = Digest::SHA256.hexdigest(Digest::SHA256.hexdigest(options[:username] + password) + password)
+    puts "Account Key: #{options[:account_key]}" if options[:verbose]
+  end
+
+  if options[:benchmark]
+    cmd = ["ab", "-c", (options[:concurrency] || "1"), "-n", (options[:requests] || "1")]
+  else
+    cmd = ["curl", "-s", "-S"]
+  end
+
+  if options[:verbose]
+    cmd << "-v"
+  elsif !options[:quiet] && !options[:pretty]
+    cmd << "-i"
+  end
+
+  creds = ["#{options[:id]}:#{options[:account_key]}"].pack("m").strip.gsub("\n", "")
+  auth_header = "Authorization: Wesabe #{creds}"
+  cmd += ["-H", auth_header]
+
+  if options[:language]
+    cmd += ["-H", "Accept-Language: #{options[:language]}"]
+  end
+
+  if options[:content_type]
+    cmd += ["-H", "Accept: #{options[:content_type]}"]
+  end
+
+  cmd += ARGV.map { |arg| (options[:base] || "http://0.0.0.0:8080/v2/accounts") + arg }
+
+  puts cmd.map { |arg| arg =~ /^(Auth|Accept)/ ? arg.inspect : arg }.join(" ") if options[:verbose]
+  if options[:pretty]
+    pretty_cmd = if options[:content_type] =~ /xml/i
+      'xml_pp' # sudo port install p5-xml-twig
+    else
+      'json_xs' # sudo port install p5-json-xs
+    end
+    system("#{cmd.map{ |l| l =~ /[\s]/ ? l.inspect : l }.join(" ")} | #{pretty_cmd}")
+  else
+    system(*cmd)
+  end
+  puts "\n\n"
+  exit($?.exitstatus)
+else
+  if ARGV.first
+    $stderr.puts "#{$0}: must be given id and username (given #{[:id, :username].select{|k| options.include?(k)}.join(', ')})"
+  else
+    $stderr.puts "#{$0}: must be given a URL"
+  end
+  $stderr.puts
+  puts parser.help
+  exit(-1)
+end
