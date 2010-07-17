@@ -56,42 +56,64 @@ public class TagHierarchyBuilder {
 		private static BigDecimal FACTOR = new BigDecimal("10000");
 	}
 	
-	public static enum HierarchyType implements Function<MonetarySummary, SumOfMoney>, Predicate<Txaction> {
-		EARNINGS {
-			@Override
-			public SumOfMoney apply(MonetarySummary summary) {
-				return summary.getEarnings();
-			}
+    public static enum HierarchyType {
+        EARNINGS(new Function<MonetarySummary, SumOfMoney> () {
 
-			@Override
-			public boolean apply(Txaction txaction) {
-				return txaction.getAmount().signum() > 0;
-			}
-		},
-		SPENDING {
-			@Override
-			public SumOfMoney apply(MonetarySummary summary) {
-				return summary.getSpending();
-			}
-			
-			@Override
-			public boolean apply(Txaction txaction) {
-				return txaction.getAmount().signum() < 0;
-			}
-		},
-		NET {
-			@Override
-			public SumOfMoney apply(MonetarySummary summary) {
-				return summary.getNet();
-			}
-			
-			@Override
-			public boolean apply(Txaction txaction) {
-				return true;
-			}
-		}
-	}
-	
+            @Override
+            public SumOfMoney apply (MonetarySummary summary) {
+                return summary.getEarnings ();
+            }
+        }, new Predicate<Txaction> () {
+
+            @Override
+            public boolean apply (Txaction txaction) {
+                return txaction.getAmount ().signum () > 0;
+            }
+        }), 
+        SPENDING(new Function<MonetarySummary, SumOfMoney> () {
+
+            @Override
+            public SumOfMoney apply (MonetarySummary summary) {
+                return summary.getSpending ();
+            }
+        }, new Predicate<Txaction> () {
+
+            @Override
+            public boolean apply (Txaction txaction) {
+                return txaction.getAmount ().signum () < 0;
+            }
+        }), 
+        NET(new Function<MonetarySummary, SumOfMoney> () {
+
+            @Override
+            public SumOfMoney apply (MonetarySummary summary) {
+                return summary.getNet ();
+            }
+        }, new Predicate<Txaction> () {
+
+            @Override
+            public boolean apply (Txaction txaction) {
+                return true;
+            }
+        });
+        private Function<MonetarySummary, SumOfMoney> getSumOfMoney;
+
+        private Predicate<Txaction>                   matchesTransaction;
+
+        private HierarchyType(Function<MonetarySummary, SumOfMoney> sumFunction, Predicate<Txaction> matcher) {
+            this.getSumOfMoney = sumFunction;
+            this.matchesTransaction = matcher;
+        }
+
+        public Function<MonetarySummary, SumOfMoney> sumOfMoney () {
+            return getSumOfMoney;
+        }
+
+        public Predicate<Txaction> matcher () {
+            return matchesTransaction;
+        }
+    }
+
 	public static final Tag OTHER = new Tag("other tags") {
 		@Override
 		public int hashCode() {
@@ -119,7 +141,7 @@ public class TagHierarchyBuilder {
 		final Map<Tag, MonetarySummary> tagSummaries = tagSummarizer.summarize(txactions, currency);
 		final Map<Tag, Integer> tagRankings = Maps.newHashMap(
 			Maps.transformValues(
-				Maps.transformValues(tagSummaries, hierarchyType),
+				Maps.transformValues(tagSummaries, hierarchyType.sumOfMoney ()),
 				tagImportanceScheme
 			)
 		);
@@ -128,7 +150,7 @@ public class TagHierarchyBuilder {
 		int totalCount = 0;
 		final List<Txaction> taggedTxactions = Lists.newArrayList();
 		final List<Txaction> untaggedTxactions = Lists.newArrayList();
-		for (Txaction txaction : Iterables.filter(txactions, hierarchyType)) {
+		for (Txaction txaction : Iterables.filter(txactions, hierarchyType.matcher ())) {
 			if (isAnalyzable(txaction) && !hasFilteredTag(txaction, filteredTags)) {
 				total = total.add(txaction.getConvertedAmountByFilteringTags(filteredTags, currency, exchangeRateMap).abs());
 				totalCount++;
