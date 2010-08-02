@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+require "optparse"
+
+options = {}
+parser  = OptionParser.new do |opts|
+  opts.banner = "Usage: server [options]"
+
+  opts.on("-p", "--port=PORT", "The port number to run on") do |portnum|
+    options[:portnum] = portnum
+  end
+
+  opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+  
+  opts.on("-q", "--quiet", "Run quietly") do |q|
+    options[:quiet] = q
+  end
+
+  opts.on_tail("-h", "--help", "Show this message") do
+    puts opts
+    exit(-1)
+  end
+end
+parser.parse!
+
+options[:portnum] ||= 8080
+
+if options[:verbose]
+  cmd = "run:noisy"
+elsif options[:quiet]
+  cmd = "run:silent"
+else
+  cmd = "run"
+end
+
+brcm_dir = File.expand_path("../..", __FILE__)
+Dir.chdir(brcm_dir)
+exec "rake #{cmd} PORT=#{options[:portnum]}"
+
