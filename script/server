@@ -5,6 +5,10 @@ options = {}
 parser  = OptionParser.new do |opts|
   opts.banner = "Usage: server [options]"
 
+  opts.on("-H", "--host=HOST", "The host name to run on") do |hostname|
+    options[:hostname] = hostname
+  end
+
   opts.on("-p", "--port=PORT", "The port number to run on") do |portnum|
     options[:portnum] = portnum
   end
@@ -36,5 +40,5 @@ end
 
 brcm_dir = File.expand_path("../..", __FILE__)
 Dir.chdir(brcm_dir)
-exec "rake #{cmd} PORT=#{options[:portnum]}"
+exec "rake #{cmd} HOST=#{options[:hostname]} PORT=#{options[:portnum]}"
 
