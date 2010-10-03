@@ -11,6 +11,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.wesabe.api.accounts.entities.Account;
 import com.wesabe.api.accounts.entities.AccountStatus;
+import com.wideplay.warp.persist.Transactional;
 
 /**
  * A data access object for retrieving and storing {@link Account} instances.
@@ -58,5 +59,18 @@ public class AccountDAO extends AbstractDAO<Account> {
 				.setString("accountKey", accountKey)
 				.setParameterList("statuses", AccountStatus.toValues(statuses))
 		);
+	}
+	
+	/**
+	 * Updates the given {@code account}'s database record with the data contained
+	 * in the {@code account}.
+	 * 
+	 * @param account the account to persist to the database
+	 * @return the updated account
+	 */
+	@Transactional
+	public Account update(Account account) {
+		currentSession().update(account);
+		return account;
 	}
 }
