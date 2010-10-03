@@ -10,6 +10,7 @@ import javax.persistence.*;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
+import org.hibernate.validator.NotEmpty;
 import org.joda.time.DateTime;
 
 import com.google.common.base.Objects;
@@ -45,7 +46,7 @@ public class Account {
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Integer id;
 
-	@Column(nullable=false)
+	@Column(nullable=false) @NotEmpty
 	private String name;
 
 	@Column(name="currency")
