@@ -19,7 +19,9 @@ import org.hibernate.validator.InvalidStateException;
 import com.google.inject.Inject;
 import com.wesabe.api.accounts.dao.AccountDAO;
 import com.wesabe.api.accounts.entities.Account;
+import com.wesabe.api.accounts.entities.AccountStatus;
 import com.wesabe.api.accounts.entities.InvestmentAccount;
+import com.wesabe.api.accounts.params.BooleanParam;
 import com.wesabe.api.accounts.params.CurrencyParam;
 import com.wesabe.api.accounts.params.IntegerParam;
 import com.wesabe.api.accounts.presenters.AccountPresenter;
@@ -66,30 +68,56 @@ public class AccountResource {
 			@Context Locale locale,
 			@PathParam("accountId") IntegerParam accountId,
 			@FormParam("name") String name,
-			@FormParam("currency") CurrencyParam currency) {
+			@FormParam("currency") CurrencyParam currency,
+			@FormParam("archived") BooleanParam archived) {
 		
 		final Account account = accountDAO.findAccount(user.getAccountKey(), accountId.getValue());
+		boolean shouldUpdate = false;
+		
 		if (account == null) {
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
 		
 		if (name != null) {
 			account.setName(name);
+			shouldUpdate = true;
 		}
 		
 		if (currency != null) {
 			account.setCurrency(currency.getValue());
+			shouldUpdate = true;
 		}
 		
-		try {
-			accountDAO.update(account);
-		} catch (InvalidStateException ex) {
-			throw new WebApplicationException(
-					Response
-						.status(Status.BAD_REQUEST)
-						.entity(new InvalidStateExceptionPresenter().present(ex))
-						.build()
-			);
+		if (archived != null) {
+			shouldUpdate = true;
+			if ((archived.getValue() && account.isArchived()) || (!archived.getValue() && account.isActive())) {
+				// already in the target state
+				shouldUpdate = false;
+			} else if (archived.getValue() && account.isActive()) {
+				account.setStatus(AccountStatus.ARCHIVED);
+			} else if (!archived.getValue() && account.isArchived()) {
+				account.setStatus(AccountStatus.ACTIVE);
+			} else {
+				throw new WebApplicationException(
+						Response
+							.status(Status.BAD_REQUEST)
+							.entity("Cannot change archived status of an account with status of " + account.getStatus())
+							.build()
+				);
+			}
+		}
+		
+		if (shouldUpdate) {
+			try {
+				accountDAO.update(account);
+			} catch (InvalidStateException ex) {
+				throw new WebApplicationException(
+						Response
+							.status(Status.BAD_REQUEST)
+							.entity(new InvalidStateExceptionPresenter().present(ex))
+							.build()
+				);
+			}
 		}
 		
 		return present(account, locale);
