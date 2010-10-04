@@ -34,7 +34,12 @@ public enum AccountStatus {
 	/**
 	 * An account which has been archived.
 	 */
-	ARCHIVED(3);
+	ARCHIVED(3),
+	
+	/**
+	 * An account which has imports disabled.
+	 */
+	DISABLED(5);
 	
 	private final int value;
 	
