@@ -89,14 +89,14 @@ public class AccountResource {
 		}
 		
 		if (archived != null) {
-			shouldUpdate = true;
 			if ((archived.getValue() && account.isArchived()) || (!archived.getValue() && account.isActive())) {
 				// already in the target state
-				shouldUpdate = false;
 			} else if (archived.getValue() && account.isActive()) {
 				account.setStatus(AccountStatus.ARCHIVED);
+				shouldUpdate = true;
 			} else if (!archived.getValue() && account.isArchived()) {
 				account.setStatus(AccountStatus.ACTIVE);
+				shouldUpdate = true;
 			} else {
 				throw new WebApplicationException(
 						Response
