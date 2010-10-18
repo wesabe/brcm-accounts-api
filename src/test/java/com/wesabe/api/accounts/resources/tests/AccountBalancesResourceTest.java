@@ -75,6 +75,21 @@ public class AccountBalancesResourceTest {
 		}
 	}
 	
+	public static class Requesting_All_Account_Balances_For_An_Account_Without_A_Balance extends Setup {
+		@Before
+		public void setup() {
+			super.setup();
+			when(account.hasBalance()).thenReturn(false);
+			when(account.getAccountBalances()).thenReturn(Sets.newHashSet(accountBalance));
+		}
+		
+		@Test
+		public void itDoesNotPresentAnyAccountBalances() {
+			accountBalancesResource.list(user, Locale.ENGLISH, new IntegerParam("1"));
+			verify(accountBalancePresenter, never()).present(Mockito.any(AccountBalance.class), eq(Locale.ENGLISH));
+		}
+	}
+	
 	public static class Creating_A_New_Account_Balance extends Setup {
 		@Before
 		public void setup() {
