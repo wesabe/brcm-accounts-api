@@ -100,7 +100,7 @@ public class AccountResourceTest {
 		@Test
 		public void itPresentsTheAccount() {
 			accountResource.show(user, Locale.ENGLISH, new IntegerParam("1"));
-			verify(investmentAccountPresenter).present(account, Locale.ENGLISH);
+			verify(investmentAccountPresenter).present(investmentAccount, Locale.ENGLISH);
 		}
 	}
 	
