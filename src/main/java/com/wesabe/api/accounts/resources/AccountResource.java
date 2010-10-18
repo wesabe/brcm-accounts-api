@@ -108,19 +108,66 @@ public class AccountResource {
 		}
 		
 		if (shouldUpdate) {
-			try {
-				accountDAO.update(account);
-			} catch (InvalidStateException ex) {
-				throw new WebApplicationException(
-						Response
-							.status(Status.BAD_REQUEST)
-							.entity(new InvalidStateExceptionPresenter().present(ex))
-							.build()
-				);
-			}
+			save(account);
 		}
 		
 		return present(account, locale);
+	}
+
+	@PUT
+	@Path("enable-balance")
+		public XmlsonObject enable(@Context WesabeUser user,
+			@Context Locale locale,
+			@PathParam("accountId") IntegerParam accountId) {
+		
+		final Account account = accountDAO.findAccount(user.getAccountKey(), accountId.getValue());
+		
+		if (account == null) {
+			throw new WebApplicationException(Status.NOT_FOUND);
+		}
+		
+		account.enableBalance();
+		save(account);
+		
+		return present(account, locale);
+	}
+	
+	@PUT
+	@Path("disable-balance")
+	public XmlsonObject disable(@Context WesabeUser user,
+			@Context Locale locale,
+			@PathParam("accountId") IntegerParam accountId) {
+		
+		final Account account = accountDAO.findAccount(user.getAccountKey(), accountId.getValue());
+		
+		if (account == null) {
+			throw new WebApplicationException(Status.NOT_FOUND);
+		}
+		
+		try {
+			account.disableBalance();
+			save(account);
+		} catch (InvalidStateException ex) {
+			throw new WebApplicationException(
+					Response.status(Status.CONFLICT)
+						.entity("Could not disable balance for account")
+						.build());
+		}
+		
+		return present(account, locale);
+	}
+	
+	private void save(final Account account) {
+		try {
+			accountDAO.update(account);
+		} catch (InvalidStateException ex) {
+			throw new WebApplicationException(
+					Response
+						.status(Status.BAD_REQUEST)
+						.entity(new InvalidStateExceptionPresenter().present(ex))
+						.build()
+			);
+		}
 	}
 	
 	private XmlsonObject present(Account account, Locale locale) {

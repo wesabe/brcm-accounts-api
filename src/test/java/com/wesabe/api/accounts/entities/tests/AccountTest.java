@@ -10,6 +10,7 @@ import static org.junit.Assert.*;
 
 import java.util.Set;
 
+import org.hibernate.validator.InvalidStateException;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import com.wesabe.api.accounts.entities.AccountStatus;
 import com.wesabe.api.accounts.entities.AccountType;
 import com.wesabe.api.accounts.entities.Txaction;
 import com.wesabe.api.util.guid.GUID;
+import com.wesabe.api.util.money.Money;
 
 @RunWith(Enclosed.class)
 public class AccountTest {
@@ -175,6 +177,22 @@ public class AccountTest {
 		public void itHasAPosition() throws Exception {
 			assertEquals(Integer.valueOf(12), account.getPosition());
 		}
+		
+		@Test
+		public void itAllowsEnablingBalanceAsANoOp() {
+			Money balance = account.getBalance();
+			account.enableBalance();
+			assertEquals(balance, account.getBalance());
+		}
+		
+		@Test
+		public void itDoesNotAllowDisablingBalance() {
+			try {
+				account.disableBalance();
+				fail("disabling account balance for a checking account should have failed");
+			} catch (InvalidStateException ex) {
+			}
+		}
 	}
 	
 	public static class An_Account_With_Uploads {
@@ -200,7 +218,12 @@ public class AccountTest {
 	}
 	
 	public static class A_Cash_Account {
-		private final static Account account = Account.ofType(AccountType.CASH);
+		private static Account account;
+		
+		@Before
+		public void setup() {
+			account = Account.ofType(AccountType.CASH);
+		}
 		
 		@Test
 		public void itHasAccountTypeCash() {
@@ -216,13 +239,29 @@ public class AccountTest {
 		public void itHasNoLastActivityDate() throws Exception {
 			assertNull(account.getLastActivityDate());
 		}
+		
+		@Test
+		public void itAllowsEnablingBalanceByGivingItABalance() throws Exception {
+			assertFalse(account.hasBalance());
+			account.enableBalance();
+			assertTrue(account.hasBalance());
+			assertEquals("account should have a new zero balance", money("0.00", USD), account.getBalance());
+		}
+		
+		@Test
+		public void itAllowsDisablingBalanceAsANoOp() {
+			assertFalse(account.hasBalance());
+			account.disableBalance();
+			assertFalse(account.hasBalance());
+		}
 	}
 	
 	public static class A_Cash_Account_With_A_Cached_Balance {
-		private final static Account account = Account.ofType(AccountType.CASH);
+		private static Account account;
 
 		@Before
 		public void setup() throws Exception {
+			account = Account.ofType(AccountType.CASH);
 			inject(Account.class, account, "balance", decimal("10.00"));
 		}
 		
@@ -240,10 +279,30 @@ public class AccountTest {
 		public void itHasNoLastActivityDate() throws Exception {
 			assertNull(account.getLastActivityDate());
 		}
+		
+		@Test
+		public void itAllowsEnablingBalance() throws Exception {
+			assertFalse(account.hasBalance());
+			account.enableBalance();
+			assertTrue(account.hasBalance());
+			assertEquals("account should use the previously-cached balance", money("10.00", USD), account.getBalance());
+		}
+		
+		@Test
+		public void itAllowsDisablingBalanceAsANoOp() {
+			assertFalse(account.hasBalance());
+			account.disableBalance();
+			assertFalse(account.hasBalance());
+		}
 	}
 	
 	public static class A_Manual_Account {
-		private final static Account account = Account.ofType(AccountType.MANUAL);
+		private static Account account;
+		
+		@Before
+		public void setup() {
+			account = Account.ofType(AccountType.MANUAL);
+		}
 		
 		@Test
 		public void itHasAccountTypeManual() {
@@ -272,6 +331,20 @@ public class AccountTest {
 		@Test
 		public void itHasABalanceEqualToTheLastAccountBalance() {
 			assertEquals(money("10.00", USD), account.getBalance());
+		}
+		
+		@Test
+		public void itAllowsEnablingBalanceAsANoOp() {
+			assertTrue(account.hasBalance());
+			account.enableBalance();
+			assertTrue(account.hasBalance());
+		}
+		
+		@Test
+		public void itAllowsDisablingBalance() {
+			assertTrue(account.hasBalance());
+			account.disableBalance();
+			assertFalse(account.hasBalance());
 		}
 	}
 	

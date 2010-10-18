@@ -49,9 +49,11 @@ public class AccountBalancesResource {
 		
 		final XmlsonArray result = new XmlsonArray("account-balances");
 		final Account account = accountDAO.findAccount(user.getAccountKey(), accountId.getValue());
-		
-		for (AccountBalance accountBalance : account.getAccountBalances()) {
-			result.add(presenter.present(accountBalance, locale));
+
+		if (account.hasBalance()) {
+			for (AccountBalance accountBalance : account.getAccountBalances()) {
+				result.add(presenter.present(accountBalance, locale));
+			}
 		}
 		
 		return result;

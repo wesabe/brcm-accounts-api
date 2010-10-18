@@ -10,6 +10,8 @@ import javax.persistence.*;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
+import org.hibernate.validator.InvalidStateException;
+import org.hibernate.validator.InvalidValue;
 import org.hibernate.validator.NotEmpty;
 import org.joda.time.DateTime;
 
@@ -182,6 +184,21 @@ public class Account {
 		return calculateBalance();
 	}
 
+	public void setBalance(BigDecimal balance) {
+		accountBalances.add(new AccountBalance(this, balance, new DateTime()));
+		calculateBalance();
+	}
+	
+	public void setBalance(Money balance) {
+		if (!balance.getCurrency().equals(getCurrency())) {
+			throw new InvalidStateException(new InvalidValue[] {
+					new InvalidValue("currency for new balance ("+balance.getCurrency()+") does not match account currency ("+getCurrency()+")", getClass(), "balance", balance, this)
+			});
+		}
+		
+		setBalance(balance.getValue());
+	}
+
 	private boolean hasCachedBalance() {
 		return balance != null;
 	}
@@ -193,7 +210,35 @@ public class Account {
 	private boolean canHaveBalance() {
 		return getAccountType().hasBalance();
 	}
+	
+	public void enableBalance() {
+		if (getAccountType().hasBalance()) {
+			// nothing to do
+			return;
+		}
+		
+		setAccountType(AccountType.MANUAL);
+		// give us some sort of balance if we don't have one
+		if (!hasBalance()) {
+			setBalance(new BigDecimal("0.0"));
+		}
+	}
 
+	public void disableBalance() {
+		if (!getAccountType().hasBalance()) {
+			// nothing to do
+			return;
+		}
+		
+		if (getAccountType().hasUploads()) {
+			throw new InvalidStateException(new InvalidValue[] {
+					new InvalidValue("cannot disable balances on accounts with uploads", getClass(), "accountTypeId", AccountType.CASH, this)
+			});
+		}
+		
+		setAccountType(AccountType.CASH);
+	}
+	
 	private Money calculateBalance() {
 		final AccountBalance accountBalance = getMostRecentAccountBalance();
 		if (accountBalance == null) {
