@@ -10,6 +10,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.Type;
@@ -20,6 +22,13 @@ import com.wesabe.api.util.money.Money;
 
 @Entity
 @Table(name="account_balances")
+@NamedQueries({
+	@NamedQuery(
+	  name="com.wesabe.api.accounts.AccountBalance.findByAccountKeyAndRelativeAccountIdAndBalanceId",
+	  query="SELECT b FROM Account a, AccountBalance b" +
+	  		" WHERE a.accountKey = :accountKey AND a = b.account AND b.id = :accountBalanceId"
+	)
+})
 public class AccountBalance {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
@@ -39,6 +48,10 @@ public class AccountBalance {
 	@Column(name="created_at")
 	@Type(type="org.joda.time.contrib.hibernate.PersistentDateTime")
 	private DateTime createdAt;
+	
+	@Column(name="updated_at")
+	@Type(type="org.joda.time.contrib.hibernate.PersistentDateTime")
+	private DateTime updatedAt;
 	
 	public AccountBalance() {
 		// nothing here yet
@@ -76,5 +89,17 @@ public class AccountBalance {
 
 	public DateTime getCreatedAt() {
 		return createdAt;
+	}
+
+	public void setCreatedAt(DateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+	
+	public DateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(DateTime updatedAt) {
+		this.updatedAt = updatedAt;
 	}
 }
