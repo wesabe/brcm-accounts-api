@@ -9,10 +9,14 @@ parser  = OptionParser.new do |opts|
     options[:portnum] = portnum
   end
 
+  opts.on("-P", "--pid=PID", "Specifies the PID file") do |pid|
+    options[:pid] = pid
+  end
+
   opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
     options[:verbose] = v
   end
-  
+
   opts.on("-q", "--quiet", "Run quietly") do |q|
     options[:quiet] = q
   end
@@ -32,6 +36,10 @@ elsif options[:quiet]
   cmd = "run:silent"
 else
   cmd = "run"
+end
+
+if options[:pid]
+  File.open(options[:pid], 'w') {|f| f << $$ }
 end
 
 brcm_dir = File.expand_path("../..", __FILE__)
