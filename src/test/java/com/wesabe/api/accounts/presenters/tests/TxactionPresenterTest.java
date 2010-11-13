@@ -31,6 +31,7 @@ import com.wesabe.api.accounts.presenters.MoneyPresenter;
 import com.wesabe.api.accounts.presenters.TaggedAmountPresenter;
 import com.wesabe.api.accounts.presenters.TxactionPresenter;
 import com.wesabe.xmlson.XmlsonArray;
+import com.wesabe.xmlson.XmlsonBoolean;
 import com.wesabe.xmlson.XmlsonElement;
 import com.wesabe.xmlson.XmlsonObject;
 
@@ -306,6 +307,7 @@ public class TxactionPresenterTest {
 			when(transfer.getTransferTxaction()).thenReturn(txaction);
 			when(transfer.getNote()).thenReturn("Another thing.");
 			when(txaction.isTransfer()).thenReturn(true);
+			when(txaction.isPairedTransfer()).thenReturn(true);
 			when(txaction.getTransferTxaction()).thenReturn(transfer);
 		}
 		
@@ -384,6 +386,26 @@ public class TxactionPresenterTest {
 			
 			final XmlsonArray tags = (XmlsonArray) representation.get("tags");
 			assertThat(tags.getMembers().size(), is(0));
+		}
+	}
+	
+	public static class The_Representation_Of_An_Unpaired_Transfer_Txaction extends Context
+	{
+		@Before
+		@Override
+		public void setup() throws Exception {
+			super.setup();
+			when(txaction.isTransfer()).thenReturn(true);
+			when(txaction.isPairedTransfer()).thenReturn(false);
+			when(txaction.getTransferTxaction()).thenReturn(txaction);
+		}
+		
+		@Test
+		public void itHasATrueValueForTransfer() throws Exception {
+			final XmlsonObject envelope = presenter.present(txaction, Locale.UK);
+			final XmlsonBoolean representation = (XmlsonBoolean) envelope.get("transfer");
+			
+			assertThat(representation.getValue(), is(true));
 		}
 	}
 }

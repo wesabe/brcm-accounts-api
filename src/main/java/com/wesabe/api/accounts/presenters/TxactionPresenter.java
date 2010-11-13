@@ -44,8 +44,10 @@ public class TxactionPresenter {
 	private XmlsonObject presentWithTransfer(Txaction txaction, Locale locale) {
 		final XmlsonObject root = presentWithoutTransfer("transaction", txaction, locale);
 		
-		if (txaction.isTransfer()) {
+		if (txaction.isPairedTransfer()) {
 			root.add(presentWithoutTransfer("transfer", txaction.getTransferTxaction(), locale));
+		} else if (txaction.isTransfer()) {
+			root.addProperty("transfer", true);
 		} else {
 			root.addNullProperty("transfer");
 		}
