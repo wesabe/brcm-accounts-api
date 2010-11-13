@@ -223,6 +223,10 @@ public class Txaction implements Monetary, Comparable<Txaction> {
 		return transferTxaction != null;
 	}
 	
+	public boolean isPairedTransfer() {
+		return transferTxaction != null && !transferTxaction.equals(this);
+	}
+	
 	public TxactionStatus getStatus() {
 		return TxactionStatus.byValue(status);
 	}
