@@ -111,6 +111,9 @@ public class Txaction implements Monetary, Comparable<Txaction> {
 	@Column(name="raw_name")
 	private String rawName;
 	
+	@Column(name="filtered_name")
+	private String filteredName;
+	
 	@Column
 	private String memo;
 	
@@ -310,6 +313,10 @@ public class Txaction implements Monetary, Comparable<Txaction> {
 		return uneditedName;
 	}
 	
+	public String getFilteredName() {
+		return filteredName;
+	}
+
 	public Merchant getMerchant() {
 		return merchant;
 	}
