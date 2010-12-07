@@ -447,4 +447,39 @@ public class TxactionListBuilderTest {
 			assertEquals(3, list.getTotalCount());
 		}
 	}
+	
+	public static class A_Builder_With_An_Amount {
+		private List<Txaction> txactions;
+		private Account checking = Account.ofType(AccountType.CHECKING);
+		private Account savings = Account.ofType(AccountType.SAVINGS);
+		private Txaction wholeFoods = new Txaction(checking, decimal("-48.19"), jun14th);
+		private Txaction starbucks = new Txaction(checking, decimal("-3.00"), jun15th);
+		private Txaction interestEarned = new Txaction(savings, decimal("23.01"), new DateTime());
+		private CurrencyExchangeRateMap exchangeRates = new CurrencyExchangeRateMap();
+
+		@Before
+		public void setup() throws Exception {
+			checking.setCurrency(USD);
+			savings.setCurrency(USD);
+			
+			inject(Account.class, checking, "accountBalances", Sets.newHashSet(new AccountBalance(checking, decimal("100.00"), new DateTime())));
+			inject(Account.class, savings, "accountBalances", Sets.newHashSet(new AccountBalance(savings, decimal("100.00"), new DateTime())));
+			
+			starbucks.setStatus(TxactionStatus.ACTIVE);
+			wholeFoods.setStatus(TxactionStatus.ACTIVE);
+			interestEarned.setStatus(TxactionStatus.ACTIVE);
+			
+			txactions = ImmutableList.of(interestEarned, starbucks, wholeFoods);
+		}
+
+		@Test
+		public void itReturnsTxactionsWithTheCorrectAmount() {
+			final TxactionList list = new TxactionListBuilder()
+											.setAmount(decimal("-3.00"))
+											.setCurrency(USD)
+											.setCurrencyExchangeRateMap(exchangeRates)
+											.build(txactions);
+			assertEquals(ImmutableList.of(starbucks), list.getTxactions());
+		}
+	}
 }
