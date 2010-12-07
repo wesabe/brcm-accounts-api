@@ -2,6 +2,7 @@ package com.wesabe.api.accounts.resources.tests;
 
 import static com.wesabe.api.tests.util.CurrencyHelper.*;
 import static com.wesabe.api.tests.util.DateHelper.*;
+import static com.wesabe.api.tests.util.NumberHelper.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
@@ -69,6 +70,7 @@ public class OldTxactionsResourceTest {
 			this.offset = null;
 			this.startDate = null;
 			this.endDate = null;
+			this.amount = null;
 			this.accountUris = ImmutableSet.of();
 			this.tagUris = ImmutableSet.of();
 			this.merchantNames = ImmutableSet.of();
@@ -358,11 +360,14 @@ public class OldTxactionsResourceTest {
 		@Override
 		public void setup() throws Exception {
 			super.setup();
+			this.amount = decimal("-20.00");
 		}
 		
 		@Test
 		public void itFindsOnlyTransactionsWithTheGivenAmount() throws Exception {
 			resource.show(context.getUser(), Locale.CANADA, currency, uneditedOnly, limit, offset, startDate, endDate, accountUris, tagUris, merchantNames, amount);
+			
+			verify(context.getTxactionListBuilder()).setAmount(amount);
 		}
 	}
 }
