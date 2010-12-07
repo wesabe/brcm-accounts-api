@@ -25,6 +25,7 @@ import com.wesabe.api.accounts.entities.AccountList;
 import com.wesabe.api.accounts.entities.AccountType;
 import com.wesabe.api.accounts.entities.Merchant;
 import com.wesabe.api.accounts.entities.Tag;
+import com.wesabe.api.accounts.entities.TaggedAmount;
 import com.wesabe.api.accounts.entities.Txaction;
 import com.wesabe.api.accounts.entities.TxactionList;
 import com.wesabe.api.accounts.entities.TxactionStatus;
@@ -479,6 +480,71 @@ public class TxactionListBuilderTest {
 											.setCurrency(USD)
 											.setCurrencyExchangeRateMap(exchangeRates)
 											.build(txactions);
+			assertEquals(ImmutableList.of(starbucks), list.getTxactions());
+		}
+	}
+	public static class A_Builder_With_A_Query {
+		private List<Txaction> txactions;
+		private Account checking = Account.ofType(AccountType.CHECKING);
+		private Account savings = Account.ofType(AccountType.SAVINGS);
+		private Txaction wholeFoods = new Txaction(checking, decimal("-48.19"), jun14th);
+		private Txaction starbucks = new Txaction(checking, decimal("-3.00"), jun15th);
+		private Txaction interestEarned = new Txaction(savings, decimal("23.01"), new DateTime());
+		private CurrencyExchangeRateMap exchangeRates = new CurrencyExchangeRateMap();
+
+		@Before
+		public void setup() throws Exception {
+			checking.setCurrency(USD);
+			savings.setCurrency(USD);
+			
+			inject(Account.class, checking, "accountBalances", Sets.newHashSet(new AccountBalance(checking, decimal("100.00"), new DateTime())));
+			inject(Account.class, savings, "accountBalances", Sets.newHashSet(new AccountBalance(savings, decimal("100.00"), new DateTime())));
+			
+			starbucks.setStatus(TxactionStatus.ACTIVE);
+			wholeFoods.setStatus(TxactionStatus.ACTIVE);
+			interestEarned.setStatus(TxactionStatus.ACTIVE);
+			
+			txactions = ImmutableList.of(interestEarned, starbucks, wholeFoods);
+		}
+				
+		private TxactionList buildTxactionList(String query) {
+			final TxactionList list = new TxactionListBuilder()
+											.setQuery(query)
+											.setCurrency(USD)
+											.setCurrencyExchangeRateMap(exchangeRates)
+											.build(txactions);
+			return list;
+		}
+		
+		@Test
+		public void itReturnsTxactionsWithFilteredNamesContainingTheQuery() throws Exception {
+			inject(Txaction.class, starbucks, "filteredName", "Starbucks San Francis");
+			
+			final TxactionList list = buildTxactionList("Starbucks");
+			assertEquals(ImmutableList.of(starbucks), list.getTxactions());
+		}
+
+		@Test
+		public void itReturnsTxactionsWithMerchantNamesContainingTheQuery() throws Exception {
+			starbucks.setMerchant(new Merchant("Starbucks"));
+			
+			final TxactionList list = buildTxactionList("Starbucks");
+			assertEquals(ImmutableList.of(starbucks), list.getTxactions());
+		}
+		
+		@Test
+		public void itReturnsTxactionsWithTagNamesContainingTheQuery() throws Exception {
+			inject(Txaction.class, starbucks, "taggedAmounts", ImmutableList.of(new TaggedAmount(starbucks, new Tag("snack"), null)));
+			
+			final TxactionList list = buildTxactionList("Snack");
+			assertEquals(ImmutableList.of(starbucks), list.getTxactions());
+		}
+		
+		@Test
+		public void itReturnsTxactionsWithNotesContainingTheQuery() throws Exception {
+			inject(Txaction.class, starbucks, "note", "MUFFINS OH JOY");
+			
+			final TxactionList list = buildTxactionList("muffins");
 			assertEquals(ImmutableList.of(starbucks), list.getTxactions());
 		}
 	}

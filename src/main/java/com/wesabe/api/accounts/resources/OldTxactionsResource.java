@@ -74,14 +74,15 @@ public class OldTxactionsResource {
 			@QueryParam("account") Set<UriParam> accountUris,
 			@QueryParam("tag") Set<String> tagUris,
 			@QueryParam("merchant") Set<String> merchantNames,
-			@QueryParam("amount") BigDecimal amount) {
+			@QueryParam("amount") BigDecimal amount,
+			@QueryParam("query") String query) {
 		
 		final List<Account> accounts = getAccounts(user, accountUris);
 		final TxactionList txactions = filterTxactions(
 				accounts,
 				getTxactions(accounts, startDate, endDate),
 				currency, uneditedOnly, limit, offset,
-				tagUris, merchantNames, amount
+				tagUris, merchantNames, amount, query
 		);
 
 		return presenter.present(txactions, locale);
@@ -90,7 +91,7 @@ public class OldTxactionsResource {
 	private TxactionList filterTxactions(List<Account> accounts,
 			List<Txaction> txactions, CurrencyParam currency, BooleanParam uneditedOnly,
 			IntegerParam limit, IntegerParam offset, Set<String> tagUris,
-			Set<String> merchantNames, BigDecimal amount) {
+			Set<String> merchantNames, BigDecimal amount, String query) {
 		final TxactionListBuilder txactionListBuilder = builderProvider.get();
 		txactionListBuilder.setAccounts(accounts);
 		txactionListBuilder.setUnedited(uneditedOnly.getValue());
@@ -106,9 +107,11 @@ public class OldTxactionsResource {
 		if (offset != null) {
 			txactionListBuilder.setOffset(offset.getValue());
 		}
-		
 		if (amount != null) {
 			txactionListBuilder.setAmount(amount);
+		}
+		if (query != null) {
+			txactionListBuilder.setQuery(query);
 		}
 		
 		final TxactionList filteredTxactions = txactionListBuilder.build(txactions);
