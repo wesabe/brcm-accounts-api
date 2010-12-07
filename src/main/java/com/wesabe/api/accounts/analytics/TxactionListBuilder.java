@@ -1,5 +1,6 @@
 package com.wesabe.api.accounts.analytics;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Currency;
@@ -30,6 +31,7 @@ public class TxactionListBuilder {
 	private int limit = 0;
 	private Currency currency;
 	private CurrencyExchangeRateMap exchangeRateMap;
+	private BigDecimal amount;
 	
 	public TxactionList build(Collection<Txaction> txactions) {
 		TxactionList txactionList = new TxactionList();
@@ -100,6 +102,10 @@ public class TxactionListBuilder {
 	private List<Txaction> filter(Collection<Txaction> txactions) {
 		List<Txaction> filteredTxactions = filterHiddenTxactions(txactions);
 		
+		if (amount != null) {
+			filteredTxactions = filterByAmount(filteredTxactions);
+		}
+		
 		if (!accounts.isEmpty()) {
 			filteredTxactions = filterByAccounts(filteredTxactions);
 		}
@@ -119,6 +125,17 @@ public class TxactionListBuilder {
 		return filteredTxactions;
 	}
 	
+	private List<Txaction> filterByAmount(List<Txaction> txactions) {
+		return Lists.newArrayList(
+				Iterables.filter(txactions, new Predicate<Txaction>() {
+					@Override
+					public boolean apply(Txaction txaction) {
+						return txaction.getAmount().getValue().equals(amount);
+					}
+				})
+			);
+	}
+
 	private List<Txaction> filterByMerchants(List<Txaction> txactions) {
 		return Lists.newArrayList(
 			Iterables.filter(txactions, new Predicate<Txaction>() {
@@ -212,6 +229,11 @@ public class TxactionListBuilder {
 
 	public TxactionListBuilder setLimit(int limit) {
 		this.limit = limit;
+		return this;
+	}
+
+	public TxactionListBuilder setAmount(BigDecimal amount) {
+		this.amount = amount;
 		return this;
 	}
 	
