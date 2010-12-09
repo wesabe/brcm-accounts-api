@@ -50,6 +50,7 @@ public class OldIntervalSummaryResourceTest {
 		private Set<String> tagUris;
 		private Set<String> merchantNames;
 		private Set<Tag> filteredTags;
+		private String query;
 		private MockResourceContext context;
 		private Account account;
 		private AccountList accounts;
@@ -100,12 +101,14 @@ public class OldIntervalSummaryResourceTest {
 			this.tagUris = ImmutableSet.of("/tags/food");
 			
 			this.merchantNames = ImmutableSet.of("Starbucks");
+			
+			this.query = "starbucks";
 
 			this.resource = context.getInstance(OldIntervalSummaryResource.class);
 		}
 		
 		private XmlsonObject handleGet() {
-			return resource.show(context.getUser(), Locale.TAIWAN, intervalType, currency, startDate, endDate, uneditedOnly, accountUris, tagUris, merchantNames, filteredTags);
+			return resource.show(context.getUser(), Locale.TAIWAN, intervalType, currency, startDate, endDate, uneditedOnly, accountUris, tagUris, merchantNames, filteredTags, query);
 		}
 
 		@Test
@@ -131,6 +134,7 @@ public class OldIntervalSummaryResourceTest {
 			verify(context.getTxactionListBuilder()).setTags(ImmutableSet.of(new Tag("food")));
 			verify(context.getTxactionListBuilder()).setAccounts(accounts);
 			verify(context.getTxactionListBuilder()).setMerchantNames(merchantNames);
+			verify(context.getTxactionListBuilder()).setQuery(query);
 			verify(context.getTxactionListBuilder()).build(ImmutableList.of(txaction, filteredTxaction));
 		}
 
@@ -162,7 +166,7 @@ public class OldIntervalSummaryResourceTest {
 		@Test
 		public void itThrowsA404() throws Exception {
 			try {
-				resource.show(context.getUser(), Locale.CHINA, new IntervalTypeParam("weekly"), new CurrencyParam("USD"), new ISODateParam("20090801"), new ISODateParam("20090501"), new BooleanParam("false"), null, null, null, null);
+				resource.show(context.getUser(), Locale.CHINA, new IntervalTypeParam("weekly"), new CurrencyParam("USD"), new ISODateParam("20090801"), new ISODateParam("20090501"), new BooleanParam("false"), null, null, null, null, null);
 			} catch (WebApplicationException e) {
 				assertThat(e.getResponse().getStatus(), is(404));
 			}

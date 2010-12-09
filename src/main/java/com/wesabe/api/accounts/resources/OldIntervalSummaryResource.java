@@ -76,7 +76,8 @@ public class OldIntervalSummaryResource {
 			@QueryParam("account") Set<UriParam> accountUris,
 			@QueryParam("tag") Set<String> tagUris,
 			@QueryParam("merchant") Set<String> merchantNames,
-			@QueryParam("ignore-tag") Set<Tag> ignoredTags) {
+			@QueryParam("ignore-tag") Set<Tag> ignoredTags,
+			@QueryParam("query") String query) {
 		
 		final DateTime intervalStartDate = intervalType.getValue().currentInterval(startDate.getValue()).getStart();
 		final DateTime intervalEndDate = intervalType.getValue().currentInterval(endDate.getValue()).getEnd();
@@ -96,6 +97,7 @@ public class OldIntervalSummaryResource {
 		builder.setUnedited(uneditedOnly.getValue());
 		builder.setTags(getTags(tagUris));
 		builder.setAccounts(accounts);
+		builder.setQuery(query);
 		
 		if (!merchantNames.isEmpty()) {
 			builder.setMerchantNames(merchantNames);
