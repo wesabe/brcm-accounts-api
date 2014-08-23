@@ -63,7 +63,7 @@ def run_app(level, cmd)
 end
 
 def run_server(level)
-  run_app(level, "server --config=development.properties --port=#{ENV['PORT'] || 8080}")
+  run_app(level, "server --config=development.properties #{ENV['HOST'] && '--host=' + ENV['HOST']} --port=#{ENV['PORT'] || 8080}")
 end
 
 desc "Run brcm-accounts-api in an embedded Jetty server."
